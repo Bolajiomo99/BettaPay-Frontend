@@ -9,14 +9,14 @@ import { StellarNetwork, STELLAR_NETWORKS, normalizeNetwork } from '@/lib/stella
 
 type Connector = 'freighter' | 'walletconnect' | null;
 
-function debouncePromise<T extends (...args: any[]) => Promise<void>>(
+function debouncePromise<T extends (...args: never[]) => Promise<void>>(
   func: T,
   wait: number
 ): T {
   let timeout: NodeJS.Timeout | null = null;
   let resolvers: Array<() => void> = [];
 
-  return (async (...args: any[]) => {
+  return (async (...args: never[]) => {
     return new Promise<void>((resolve) => {
       resolvers.push(resolve);
       if (timeout) clearTimeout(timeout);

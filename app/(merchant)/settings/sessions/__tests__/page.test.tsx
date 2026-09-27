@@ -27,7 +27,12 @@ const otherSession = {
   isCurrent: false,
 };
 
-let sessions = {
+type SessionItem = Omit<typeof currentSession, 'status'> & {
+  status: 'active' | 'revoked';
+  revokedAt?: string;
+};
+
+let sessions: { active: SessionItem[]; history: SessionItem[] } = {
   active: [currentSession, otherSession],
   history: [],
 };

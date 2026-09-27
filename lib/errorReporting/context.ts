@@ -10,7 +10,6 @@
  * wallet store would drag the Stellar SDK into every route's bundle.
  */
 
-import { useAuthStore } from '../store/authStore';
 import { normalizeRoute } from '../rum/normalize';
 import type { ErrorContext } from './types';
 
@@ -45,6 +44,9 @@ function readWalletContext(): WalletContextSnapshot {
 
 function readAuthContext(): { isAuthenticated: boolean; role: string | null } {
   try {
+    // Import lazily to avoid a circular dependency at module initialization time.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useAuthStore } = require('../store/authStore');
     const state = useAuthStore.getState();
     // Role only — never the user object, email, or token.
     return { isAuthenticated: state.isAuthenticated, role: state.role ?? null };

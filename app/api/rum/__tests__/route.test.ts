@@ -16,6 +16,11 @@ jest.mock('next/server', () => {
 
 import { POST } from '../route';
 
+/** The mocked `NextResponse.json` returns the serialized payload on `.body`. */
+function mockJsonBody(res: unknown): unknown {
+  return JSON.parse((res as { body: string }).body);
+}
+
 function makeRequest(body: unknown) {
   return {
     headers: {
@@ -171,7 +176,7 @@ describe('POST /api/rum', () => {
       events: [{ invalid: true }],
     });
     const res = await POST(req);
-    const body = (res as { body: string }).body;
+    const body = JSON.stringify(mockJsonBody(res));
     expect(body).not.toContain('email');
     expect(body).not.toContain('token');
     expect(body).not.toContain('password');

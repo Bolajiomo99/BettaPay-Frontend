@@ -47,7 +47,10 @@ describe("useAppTranslation", () => {
     "t('%s') returns real translated text, not the raw key",
     (key) => {
       const { result } = renderHook(() => useAppTranslation());
-      const text = result.current.t(key as Parameters<typeof result.current.t>[0]);
+      // The keys are collected at runtime from en.json, so they cannot be
+      // narrowed to the statically-typed key union the hook declares.
+      const t = result.current.t as unknown as (key: string) => string;
+      const text = t(key);
       // The translation must not equal the raw key string.
       expect(text).not.toBe(key);
       // The translation must be a non-empty string.

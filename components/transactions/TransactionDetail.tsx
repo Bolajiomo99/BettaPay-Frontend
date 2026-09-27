@@ -173,7 +173,7 @@ export const TransactionDetail: React.FC<TransactionDetailProps> = ({
     },
     {
       label: 'Stellar Operation ID',
-      value: (displayTransaction as any).stellarOpId || '1928374655', // fallback for mock
+      value: displayTransaction.stellarOpId || '1928374655', // fallback for mock
       icon: Hexagon
     },
     {
@@ -195,7 +195,9 @@ export const TransactionDetail: React.FC<TransactionDetailProps> = ({
     },
     {
       label: 'Timestamp',
-      value: formatDate((displayTransaction as any).timestamp ?? displayTransaction.createdAt),
+      value: formatDate('timestamp' in displayTransaction
+        ? displayTransaction.timestamp
+        : displayTransaction.createdAt),
       icon: Clock
     },
   ];

@@ -47,6 +47,7 @@ export function resetAllUserState() {
     }
   });
 
+  // Lazy-load to avoid the auth↔wallet circular dependency during module init.
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { useWalletStore } = require("@/lib/store/walletStore");
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -64,11 +65,15 @@ export function hasRealSession(s: Pick<AuthState, "isAuthenticated" | "user">): 
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       token: null,
       role: null,
       isAuthenticated: false,
+      isLoggedIn: false,
+      _hasHydrated: false,
+      setHasHydrated: (v) => set({ _hasHydrated: v }),
+      setToken: (token) => set({ token }),
       login: (token, user) =>
         set({
           user,

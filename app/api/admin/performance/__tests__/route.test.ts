@@ -19,6 +19,15 @@ jest.mock('@/lib/auth/adminApiGuard', () => ({
 }));
 
 import { GET } from '../route';
+import type { DashboardResponse } from '@/app/(admin)/admin/performance/page';
+
+/**
+ * The mocked `NextResponse.json` returns the serialized payload on `.body`.
+ * The untyped parse is narrowed by the assertion at each call site.
+ */
+function mockJsonBody(res: unknown): unknown {
+  return JSON.parse((res as { body: string }).body);
+}
 
 function makeAdminRequest(path = '/api/admin/performance') {
   return {
@@ -78,7 +87,7 @@ describe('GET /api/admin/performance', () => {
     const req = makeAdminRequest();
     const res = await GET(req);
     expect(res.status).toBe(200);
-    const body = JSON.parse((res as { body: string }).body);
+    const body = mockJsonBody(res) as DashboardResponse;
     expect(body.totalEvents).toBe(0);
     expect(body.routes).toEqual([]);
   });
@@ -88,37 +97,38 @@ describe('GET /api/admin/performance', () => {
     const req = makeAdminRequest();
     const res = await GET(req);
     expect(res.status).toBe(200);
-    const body = JSON.parse((res as { body: string }).body);
+    const body = mockJsonBody(res) as DashboardResponse;
     expect(body.totalEvents).toBe(35);
     expect(body.routes.length).toBe(3);
     expect(body.data).not.toBeNull();
-    expect(body.data.percentiles).toBeDefined();
-    expect(body.data.trend).toBeDefined();
-    expect(body.data.distribution).toBeDefined();
+    const data = body.data!;
+    expect(data.percentiles).toBeDefined();
+    expect(data.trend).toBeDefined();
+    expect(data.distribution).toBeDefined();
   });
 
   it('filters by route', async () => {
     seedTestData();
     const req = makeAdminRequest('/api/admin/performance?route=/dashboard');
     const res = await GET(req);
-    const body = JSON.parse((res as { body: string }).body);
-    expect(body.data.route).toBe('/dashboard');
+    const body = mockJsonBody(res) as DashboardResponse;
+    expect(body.data!.route).toBe('/dashboard');
   });
 
   it('filters by metric', async () => {
     seedTestData();
     const req = makeAdminRequest('/api/admin/performance?metric=fcp');
     const res = await GET(req);
-    const body = JSON.parse((res as { body: string }).body);
-    expect(body.data.metric).toBe('fcp');
-    expect(body.data.sampleCount).toBe(5);
+    const body = mockJsonBody(res) as DashboardResponse;
+    expect(body.data!.metric).toBe('fcp');
+    expect(body.data!.sampleCount).toBe(5);
   });
 
   it('filters by time range', async () => {
     seedTestData();
     const req = makeAdminRequest('/api/admin/performance?days=1');
     const res = await GET(req);
-    const body = JSON.parse((res as { body: string }).body);
+    const body = mockJsonBody(res) as DashboardResponse;
     expect(body.data).not.toBeNull();
   });
 
@@ -126,17 +136,18 @@ describe('GET /api/admin/performance', () => {
     seedTestData();
     const req = makeAdminRequest();
     const res = await GET(req);
-    const body = JSON.parse((res as { body: string }).body);
-    expect(body.data.percentiles.p50).toBeGreaterThanOrEqual(0);
-    expect(body.data.percentiles.p90).toBeGreaterThanOrEqual(body.data.percentiles.p50);
+    const body = mockJsonBody(res) as DashboardResponse;
+    const data = body.data!;
+    expect(data.percentiles.p50).toBeGreaterThanOrEqual(0);
+    expect(data.percentiles.p90).toBeGreaterThanOrEqual(data.percentiles.p50);
   });
 
   it('returns route summaries sorted by count', async () => {
     seedTestData();
     const req = makeAdminRequest();
     const res = await GET(req);
-    const body = JSON.parse((res as { body: string }).body);
-    const summaries = body.data.routeSummaries;
+    const body = mockJsonBody(res) as DashboardResponse;
+    const summaries = body.data!.routeSummaries;
     expect(summaries.length).toBeGreaterThan(0);
     for (let i = 1; i < summaries.length; i++) {
       expect(summaries[i].count).toBeLessThanOrEqual(summaries[i - 1].count);
@@ -147,20 +158,21 @@ describe('GET /api/admin/performance', () => {
     seedTestData();
     const req = makeAdminRequest();
     const res = await GET(req);
-    const body = JSON.parse((res as { body: string }).body);
-    expect(body.data.distribution.length).toBeGreaterThan(0);
-    const totalInBuckets = body.data.distribution.reduce(
+    const body = mockJsonBody(res) as DashboardResponse;
+    const data = body.data!;
+    expect(data.distribution.length).toBeGreaterThan(0);
+    const totalInBuckets = data.distribution.reduce(
       (sum: number, b: { count: number }) => sum + b.count,
       0
     );
-    expect(totalInBuckets).toBe(body.data.sampleCount);
+    expect(totalInBuckets).toBe(data.sampleCount);
   });
 
   it('includes available metrics list', async () => {
     seedTestData();
     const req = makeAdminRequest();
     const res = await GET(req);
-    const body = JSON.parse((res as { body: string }).body);
+    const body = mockJsonBody(res) as DashboardResponse;
     expect(body.metrics).toContain('lcp');
     expect(body.metrics).toContain('fcp');
   });
@@ -175,7 +187,7 @@ describe('GET /api/admin/performance', () => {
     seedTestData();
     const req = makeAdminRequest();
     const res = await GET(req);
-    const body = JSON.parse((res as { body: string }).body);
+    const body = mockJsonBody(res) as DashboardResponse;
     expect(body.timeRange.from).toBeDefined();
     expect(body.timeRange.to).toBeDefined();
   });

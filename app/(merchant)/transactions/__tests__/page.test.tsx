@@ -40,7 +40,7 @@ jest.mock('@/components/ui', () => {
       <select
         aria-label="select"
         value={value}
-        onChange={(e) => onValueChange(e.target.value)}
+        onChange={(e) => onValueChange?.(e.target.value)}
       >
         {children}
       </select>

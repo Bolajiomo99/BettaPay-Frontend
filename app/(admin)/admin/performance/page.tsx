@@ -73,7 +73,7 @@ interface PerformanceData {
   sampleCount: number;
 }
 
-interface DashboardResponse {
+export interface DashboardResponse {
   routes: string[];
   metrics: string[];
   timeRange: { from: string; to: string };

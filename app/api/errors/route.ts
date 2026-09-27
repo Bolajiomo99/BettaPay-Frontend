@@ -14,6 +14,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { storeReports } from '@/lib/errorReporting/store';
+import { checkRateLimit } from '@/lib/errorReporting/ipRateLimit';
 import { normalizeRoute } from '@/lib/rum/normalize';
 import { VALID_ERROR_SOURCES } from '@/lib/errorReporting/types';
 import type { ErrorReport, ErrorSource } from '@/lib/errorReporting/types';
@@ -27,49 +28,6 @@ const MAX_PAYLOAD_SIZE = 128 * 1024;
 /** Rate limit settings: max 10 requests/reports per minute per IP. */
 const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-
-interface RateLimitRecord {
-  timestamps: number[];
-}
-
-const globalForErrors = global as unknown as {
-  errorsRateLimitMap?: Map<string, RateLimitRecord>;
-};
-
-const rateLimitMap =
-  globalForErrors.errorsRateLimitMap || new Map<string, RateLimitRecord>();
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForErrors.errorsRateLimitMap = rateLimitMap;
-}
-
-/** Clears rate limit store (useful for test isolation). */
-export function clearRateLimits() {
-  rateLimitMap.clear();
-}
-
-/**
- * Checks and updates rate limit for a given IP.
- * Returns true if allowed, false if rate limit exceeded.
- */
-function checkRateLimit(ip: string): { allowed: boolean; retryAfterSeconds: number } {
-  const now = Date.now();
-  const record = rateLimitMap.get(ip) || { timestamps: [] };
-
-  const windowStart = now - RATE_LIMIT_WINDOW_MS;
-  record.timestamps = record.timestamps.filter((t) => t > windowStart);
-
-  if (record.timestamps.length >= RATE_LIMIT_MAX) {
-    const oldest = record.timestamps[0];
-    const resetMs = oldest + RATE_LIMIT_WINDOW_MS - now;
-    const retryAfterSeconds = Math.max(1, Math.ceil(resetMs / 1000));
-    return { allowed: false, retryAfterSeconds };
-  }
-
-  record.timestamps.push(now);
-  rateLimitMap.set(ip, record);
-  return { allowed: true, retryAfterSeconds: 0 };
-}
 
 const contextSchema = z
   .object({
@@ -114,7 +72,7 @@ export async function POST(request: Request) {
     const realIp = request.headers.get('x-real-ip');
     const ip = forwarded ? forwarded.split(',')[0].trim() : realIp || '127.0.0.1';
 
-    const { allowed, retryAfterSeconds } = checkRateLimit(ip);
+    const { allowed, retryAfterSeconds } = checkRateLimit(ip, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS);
     if (!allowed) {
       return NextResponse.json(
         { error: 'Too Many Requests' },

@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AdminPerformancePage from '../page';
+import type { DashboardResponse } from '../page';
 
 // Mock recharts to avoid SVG rendering issues in jsdom
 jest.mock('recharts', () => ({
@@ -40,7 +41,7 @@ type MockQueryResult = {
   refetch: jest.Mock;
 };
 
-const mockUseQuery = useQuery as jest.MockedFunction<typeof useQuery>;
+const mockUseQuery = useQuery as jest.Mock;
 
 function createWrapper() {
   const queryClient = new QueryClient({

@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { useWalletStore } from "@/lib/store/walletStore";
 import { WalletConnectModal } from "./WalletConnectModal";
 import { WalletModalErrorBoundary } from "./WalletModalErrorBoundary";
-import type { WalletConnectSession } from "@/lib/stellar/walletconnect";
+import { normalizeWalletNetwork, type WalletConnectSession } from "@/lib/stellar/walletconnect";
 
 export interface WalletModalProps {
   isOpen?: boolean;
@@ -237,7 +237,7 @@ export function WalletModal({ isOpen = true, onClose, onConnected }: WalletModal
       <WalletConnectModal
         open={walletModalOpen && walletConnectPending}
         onOpenChange={handleWalletConnectOpenChange}
-        network={network}
+        network={normalizeWalletNetwork(network)}
         onConnected={handleWalletConnectSession}
       />
     </>

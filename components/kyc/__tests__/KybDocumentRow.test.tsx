@@ -1,6 +1,7 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen } from '@testing-library/react';
+import { useUploadKybDocument } from '@/lib/kyc/api';
+import type { KybDocTypeMeta } from '@/lib/kyc/types';
 import { KybDocumentRow } from '../KybDocumentRow';
 
 jest.mock('@/lib/kyc/api', () => ({
@@ -8,7 +9,9 @@ jest.mock('@/lib/kyc/api', () => ({
     upload: jest.fn(),
     isUploading: false,
     progress: 0,
+    activeType: null,
     error: null,
+    reset: jest.fn(),
   })),
 }));
 
@@ -25,8 +28,8 @@ jest.mock('../KybStatusBadge', () => ({
   ),
 }));
 
-const defaultMeta = {
-  type: 'certificate' as const,
+const defaultMeta: KybDocTypeMeta = {
+  type: 'certificate_of_incorporation',
   label: 'Certificate of Incorporation',
   hint: 'Upload your certificate',
   required: true,
@@ -46,12 +49,13 @@ describe('KybDocumentRow', () => {
 
   it('shows server error when upload fails', async () => {
     const mockUpload = jest.fn().mockRejectedValue(new Error('Payload Too Large'));
-    const { useUploadKybDocument } = require('@/lib/kyc/api');
-    useUploadKybDocument.mockReturnValue({
+    jest.mocked(useUploadKybDocument).mockReturnValue({
       upload: mockUpload,
       isUploading: false,
       progress: 0,
+      activeType: null,
       error: 'Payload Too Large',
+      reset: jest.fn(),
     });
 
     render(
@@ -66,12 +70,13 @@ describe('KybDocumentRow', () => {
   });
 
   it('shows upload progress when uploading', () => {
-    const { useUploadKybDocument } = require('@/lib/kyc/api');
-    useUploadKybDocument.mockReturnValue({
+    jest.mocked(useUploadKybDocument).mockReturnValue({
       upload: jest.fn(),
       isUploading: true,
       progress: 50,
+      activeType: 'certificate_of_incorporation',
       error: null,
+      reset: jest.fn(),
     });
 
     render(
